@@ -41,28 +41,28 @@ object SpringLeaf {
   val skipList = Set(200, 212,402, 491,44,838,213, 207)
   val catIdx = Set(352, 5, 202, 340, 838, 216, 221, 1, 1932, 281, 236, 350, 303, 323, 213, 465, 351, 272, 214, 464)
 
-  val catVal = Map(352 -> Set("U","-1","R","O"),
-  1 -> Set("H","R","Q"),
-  221 -> Set("C6"),
-  464 -> Set("-1","I"),
-  465 -> Set("Discharge NA","Dismissed","Discharged","-1"),
-  202 -> Set("BatchInquiry"),
+  val catVal = Map(352 -> Set("U","-1","R","O").zipWithIndex,
+  1 -> IndexedSeq("H","R","Q").zipWithIndex,
+  221 -> IndexedSeq("C6").zipWithIndex,
+  464 -> IndexedSeq("-1","I").zipWithIndex,
+  465 -> IndexedSeq("Discharge NA","Dismissed","Discharged","-1").zipWithIndex,
+  202 -> IndexedSeq("BatchInquiry").zipWithIndex,
 
-  323 -> Set("U","F","M","G","P","H","-1","R","S"),
-  5 -> Set("B","C","N","S"),
-  214 -> Set("HRE-Social Security Number-1397","HRE-Social Security Number-1289","FSI-0005-1","HRE-Home Phone-0621","HRE-Social Security Number-18823",
+  323 -> IndexedSeq("U","F","M","G","P","H","-1","R","S").zipWithIndex,
+  5 -> IndexedSeq("B","C","N","S").zipWithIndex,
+  214 -> IndexedSeq("HRE-Social Security Number-1397","HRE-Social Security Number-1289","FSI-0005-1","HRE-Home Phone-0621","HRE-Social Security Number-18823",
     "HRE-Social Security Number-2857","HRE-Social Security Number-1747","HRE-Social Security Number-1855",
-    "HRE-Social Security Number-15335","HRE-Social Security Number-1373","HRE-Social Security Number-10143","HRE-Home Phone-0779"),
-  236->Set("IN","ID","NM","OR","IA","IL","TN","MO","AZ","AK","WA","SD","KY","NJ","TX","MI","MD","NV","NE","MN","KS","OK","CT","OH","AR","FL","WI","CO","MT"
-    ,"DC","PA","GA","HI","WY","LA","CA","UT","AL","WV","VA","NC","NY","SC","MS","DE"),
-  281 -> Set("U","F","P","H","-1","R","S"),
-  303 -> Set("U","F","M","P","H","-1","R","S"),
-  216 -> Set("DS"),
-  1932 -> Set("BRANCH","RCC","IAPS","MOBILE","CSC"),
-  272 -> Set("MA","IN","ID","NM","OR","IA","IL","TN","PR","MO","ME","AZ","AK","VT","WA","SD","KY","NJ","TX","MI","MD","NV","NE","MN","EE","KS","OK","CT","OH","RR","AR","GS","FL","WI","RN","CO","MT","DC","ND","PA","GA","NH","HI","WY","-1","LA","CA","UT","AL","WV","VA","NC","NY","SC","RI","MS","DE"),
-  350 -> Set("U","-1","R","O"),
-  340 -> Set("BU","BD","CE","AC","DA","UD","DF","FC","FB","EB","EA","AD","UF","CF","BB","BE","AU","AA","FF","AF","UC","EE","FA","CC","DD","DU","AE","BF","BA","ED","FE","CB","DC","UU","EU","UA","UB","BC","CD","EF","DB","AB","CU","-1","CA","FU","UE","EC","FD","DE"),
-  351 -> Set("U","-1","R","O"))
+    "HRE-Social Security Number-15335","HRE-Social Security Number-1373","HRE-Social Security Number-10143","HRE-Home Phone-0779").zipWithIndex,
+  236->IndexedSeq("IN","ID","NM","OR","IA","IL","TN","MO","AZ","AK","WA","SD","KY","NJ","TX","MI","MD","NV","NE","MN","KS","OK","CT","OH","AR","FL","WI","CO","MT"
+    ,"DC","PA","GA","HI","WY","LA","CA","UT","AL","WV","VA","NC","NY","SC","MS","DE").zipWithIndex,
+  281 -> IndexedSeq("U","F","P","H","-1","R","S").zipWithIndex,
+  303 -> IndexedSeq("U","F","M","P","H","-1","R","S").zipWithIndex,
+  216 -> IndexedSeq("DS").zipWithIndex,
+  1932 -> IndexedSeq("BRANCH","RCC","IAPS","MOBILE","CSC").zipWithIndex,
+  272 -> IndexedSeq("MA","IN","ID","NM","OR","IA","IL","TN","PR","MO","ME","AZ","AK","VT","WA","SD","KY","NJ","TX","MI","MD","NV","NE","MN","EE","KS","OK","CT","OH","RR","AR","GS","FL","WI","RN","CO","MT","DC","ND","PA","GA","NH","HI","WY","-1","LA","CA","UT","AL","WV","VA","NC","NY","SC","RI","MS","DE").zipWithIndex,
+  350 -> IndexedSeq("U","-1","R","O").zipWithIndex,
+  340 -> IndexedSeq("BU","BD","CE","AC","DA","UD","DF","FC","FB","EB","EA","AD","UF","CF","BB","BE","AU","AA","FF","AF","UC","EE","FA","CC","DD","DU","AE","BF","BA","ED","FE","CB","DC","UU","EU","UA","UB","BC","CD","EF","DB","AB","CU","-1","CA","FU","UE","EC","FD","DE").zipWithIndex,
+  351 -> IndexedSeq("U","-1","R","O").zipWithIndex)
 
 
   def main(args:Array[String]): Unit ={
@@ -108,18 +108,36 @@ object SpringLeaf {
     t.collect().foreach(x=>{
       println(s"${x._1},${x._2}")
     })
-
+*/
     val lp = csvTrain.map(x=>{
-      val vec = x.zipWithIndex.drop(1).dropRight(1).map(v=>{
-        if(datIdx.contains(v._2)){
-
+      val vec: Seq[Double] = x.zipWithIndex.drop(1).dropRight(1).map(v=>{
+        if(skipList.contains(v._2)){
+          Seq.empty[Double]
+        } else if(datIdx.contains(v._2)){
+          if(v._1.trim.equals("NA")){
+            Seq(0D)
+          }else {
+            Seq((System.currentTimeMillis().toDouble - new SimpleDateFormat("ddMMMyy:HH:mm:ss").parse(v._1).getTime.toDouble) / (1000D * 60 * 60 * 24))
+          }
         }else if(booIdx.contains(v._2)){
+          if(v._1.trim.equals("NA")){
+            Seq(-1D)
+          }else {
+            Seq(if (v._1.toBoolean) 1D else 0D)
+          }
+        }else if(catVal.keySet(v._2)){
+          catVal.map(c=>{
+            if(v._2 == c._1){
+              c._2.map(x=>if(x._1.equals(v._1)) 1D else 0D )
+            }else{
+              c._2.map(x=>0D)
+            }
+          }).toSeq
 
-        }else if(Cat)
-
-      })
+        }
+      }).flatten
       //.map(x=Try{Some(x.toDouble)}.getOrElse(None)).flatten
-      LabeledPoint(x.takeRight(1).head.toInt, Vectors.dense(vec))})
+      LabeledPoint(x.takeRight(1).head.toInt, Vectors.dense(vec.toArray))})
 
     println(lp.take(2).last.features.toArray.mkString(","))
 
