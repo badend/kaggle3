@@ -41,6 +41,8 @@ object SpringLeaf_jw {
   val skipList = Set(200, 212,402, 491,44,838,213, 207)
   val catIdx = Set(352, 5, 202, 340, 838, 216, 221, 1, 1932, 281, 236, 350, 303, 323, 213, 465, 351, 272, 214, 464)
 
+  val delIdx = Set(221,216)
+
   val catVal = Map(352 -> Set("U","-1","R","O"),
   1 -> Set("H","R","Q"),
   221 -> Set("C6"),
@@ -68,91 +70,38 @@ object SpringLeaf_jw {
   def main(args:Array[String]): Unit ={
     val sc = getSparkContext()
 
-    //val otrain = sc.textFile("/Users/jihoonkang/Documents/springleaf/train.csv")
-
     val otrain = sc.textFile("hdfs://kr-data-h1:9000/user/jihoonkang/springleaf/train.csv")
 
 
     val csvTrain = otrain.filter(x => !x.startsWith(""""ID""")).map(x=>{
       val csvdata = new CSVParser().parseLine(x)
       csvdata
-
     })
 
-    def createDummy() = {
-
-    }
-
-/*
-   val col = csvTrain.take(100).map(x=>{
-      x.zipWithIndex.map(y=>{
-
-        if(y._1.trim.size>=1 && Try{y._1.toDouble}.isFailure){
-          if(Try{y._1.toBoolean}.isSuccess){
-            (y._2, "Boo")
-        } else if(Try{new SimpleDateFormat("ddMMMyy:HH:mm:ss").parse(y._1)}.isSuccess){
-            (y._2, "Dat")
-        } else {
-            (y._2, "Cat")
-          }
-        }else{
-          (y._2, "Num")
-        }
-      })
-    })
-
-
-    val rc = sc.parallelize(catIdx.toSeq).map(x=>(x,1))
-
-    val ic = csvTrain.map(x=>x.zipWithIndex.map(x=>(x._2,x._1))).flatMap(x=>x).join(rc).map(x=>(x._1,x._2._1)).groupBy(x=>x._1).map(x=>(x._1, x._2.map(x=>x._2).toSet))
-    ic.map(x=>s"${x._1},${x._2.mkString(",")}").saveAsTextFile("ic")
-
-    val t = ic.join(rc).map(x=>x._2).distinct().groupBy(x=>x._2).map(x=>(x._1, x._2.map(x=>x._1).mkString(",")))
-
-    t.collect().foreach(x=>{
-      println(s"${x._1},${x._2}")
-    })
-
-    val lp = csvTrain.map(x=>{
-      val vec = x.zipWithIndex.drop(1).dropRight(1).map(v=>{
-        if(datIdx.contains(v._2)){
-
-        }else if(booIdx.contains(v._2)){
-
-        }else if(Cat)
-
-      })
-      //.map(x=Try{Some(x.toDouble)}.getOrElse(None)).flatten
-      LabeledPoint(x.takeRight(1).head.toInt, Vectors.dense(vec))})
-
-    println(lp.take(2).last.features.toArray.mkString(","))
-
-
-    val otest = sc.textFile("hdfs://kr-data-h1:9000/user/jihoonkang/springleaf/test.csv")
-    val csvTest = otest.filter(x => !x.startsWith(""""ID""")).map(x=>{
-
-        val csvdata = new CSVParser().parseLine(x)
-      (csvdata.head, Vectors.dense(csvdata.drop(1).map(x => Try {
-          x.toDouble
-        }.getOrElse(MurmurHash3.stringHash(x).toDouble))))
-
-    })
-
-    val Array(train, test) = csvTrain.randomSplit(Array(0.7, 0.3))
-    val numClasses = 2
-
-    val a = train
-    //train.take(10).foreach(x=>println(x))
-
-    val categoricalFeaturesInfo = Map[Int, Int]()
-
-
-    val rfm: RandomForestModel = RandomForest.trainClassifier(lp, 2, categoricalFeaturesInfo, 500, "auto", "gini", 6, 200, 5)
-*/
-
-
-
-
+    createDummy(csvTrain, deleteOneItem(catVal))
   }
+
+
+  /**
+   * 더미변수로 만들 때 나머지 하나는 고려할 필요가 없음 (0,0,0,0,...) 으로 처리하면 되기 때문에
+   * @param catValInfo : 기존의 catVal
+   * @return : 하나의 item이 빠진 상태
+   */
+  def deleteOneItem(catValInfo:Map[Int, Set[String]]) = {
+    catValInfo.filter(x=> !delIdx.contains(x._1)).map(x=>(x._1, x._2.toArray)).map(x=>(x._1,x._2.drop(1)))
+  }
+
+
+  def createDummy(filtered:RDD[Array[String]], newCatValInfo: Map[Int, Array[String]]) = {
+    filtered.map(x=>{
+      val dummies = newCatValInfo.map(a=>{
+        val inner = a._2.map(b=> if (b.equals(x(a._1))) b -> 1 else b -> 0)
+        (a._1, inner)
+      })
+      val flattenDummy = dummies.map(a=>a._2.map(b=>(a._1.toString+"_"+b._1,b._2))).flatMap(x=>x)
+      (x, flattenDummy)
+    })
+  }
+
 
 }
